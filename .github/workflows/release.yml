@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. 1.1.1). Created if it doesn't exist."
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -31,15 +37,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # If the release already exists (e.g. created via the GitHub UI when
-        # tagging), attach the plugin files to it instead of failing.
+        # tagging), attach the plugin files to it instead of failing. On
+        # manual dispatch, the tag comes from the input and is created by
+        # `gh release create` pointing at the built commit.
         run: |
-          tag="${GITHUB_REF#refs/tags/}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="${GITHUB_REF#refs/tags/}"
+          fi
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
             gh release upload "$tag" --repo "$GITHUB_REPOSITORY" --clobber \
               main.js manifest.json styles.css
           else
             gh release create "$tag" --repo "$GITHUB_REPOSITORY" \
               --title "$tag" \
+              --target "$GITHUB_SHA" \
               --generate-notes \
               main.js manifest.json styles.css
           fi
