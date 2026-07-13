@@ -91,6 +91,47 @@ ul.rcpm-list li.rcpm-section {
 	min-width: 88px;
 }
 
+/* ── Ingredient editor modal ───────────────────────────────────── */
+
+.rcpm-ing-rows {
+	max-height: 55vh;
+	overflow-y: auto;
+	margin-bottom: 0.6em;
+}
+
+.rcpm-ing-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.4em;
+	margin-bottom: 0.5em;
+}
+
+.rcpm-ing-main {
+	flex: 1;
+	min-width: 0;
+}
+
+.rcpm-ing-hint {
+	font-size: 0.8em;
+	color: var(--text-muted);
+	min-height: 1.2em;
+	margin-top: 0.15em;
+	padding-left: 0.2em;
+}
+
+button.rcpm-ing-remove {
+	flex-shrink: 0;
+	font-size: 1.3em;
+	line-height: 1;
+	color: var(--text-muted);
+}
+
+.rcpm-ing-adders {
+	display: flex;
+	gap: 0.5em;
+	margin-bottom: 0.8em;
+}
+
 /* ── New recipe modal ──────────────────────────────────────────── */
 
 .rcpm-field {

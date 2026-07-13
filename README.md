@@ -128,6 +128,10 @@ Every rendered ingredients block gets a control row:
 - **as written / US / metric** cycles the displayed unit system: `2 cups`
   becomes `473 ml`, `250 g` becomes `8.8 oz`. Count units (cloves, pinches)
   are left alone, and the note is never modified.
+- **✎ (pencil)** opens the ingredient editor — a modal with one input per
+  line, add/remove buttons, and a live hint showing how each line parses
+  ("2 cups · heavy cream"), so you never have to fiddle with the raw code
+  block on a phone. Saving rewrites the block in the note.
 - The *Serves N* label updates with the multiplier (from `servings` in
   frontmatter).
 

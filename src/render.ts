@@ -1,5 +1,7 @@
-import { MarkdownRenderChild } from "obsidian";
+import { MarkdownRenderChild, setIcon } from "obsidian";
+import type { MarkdownPostProcessorContext } from "obsidian";
 import { Ingredient, parseIngredients } from "./parse";
+import { IngredientEditorModal } from "./ingredient-editor";
 import {
 	formatAmount,
 	formatQuantity,
@@ -36,13 +38,27 @@ export class IngredientsBlock extends MarkdownRenderChild {
 
 	constructor(
 		containerEl: HTMLElement,
-		source: string,
+		private source: string,
 		private plugin: RecipeManagerPlugin,
-		private sourcePath: string
+		private ctx: MarkdownPostProcessorContext
 	) {
 		super(containerEl);
 		this.ingredients = parseIngredients(source);
 		this.fractions = plugin.settings.defaultFractions;
+	}
+
+	private get sourcePath(): string {
+		return this.ctx.sourcePath;
+	}
+
+	private openEditor(): void {
+		const info = this.ctx.getSectionInfo(this.containerEl);
+		new IngredientEditorModal(this.plugin, {
+			sourcePath: this.sourcePath,
+			originalBody: this.source,
+			lineStart: info?.lineStart ?? null,
+			lineEnd: info?.lineEnd ?? null,
+		}).open();
 	}
 
 	onload(): void {
@@ -168,6 +184,15 @@ export class IngredientsBlock extends MarkdownRenderChild {
 			this.system = SYSTEM_CYCLE[(idx + 1) % SYSTEM_CYCLE.length];
 			this.render();
 		});
+
+		if (this.sourcePath) {
+			const edit = controls.createEl("button", {
+				cls: "rcpm-btn rcpm-edit",
+				attr: { "aria-label": "Edit ingredients" },
+			});
+			setIcon(edit, "pencil");
+			edit.addEventListener("click", () => this.openEditor());
+		}
 
 		const servings = this.servings;
 		if (servings != null) {

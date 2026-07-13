@@ -19,7 +19,7 @@ export default class RecipeManagerPlugin extends Plugin {
 		// Recipes render with no setup: the ingredients block works on open,
 		// and scaling / fractions are opt-in taps on top of it.
 		this.registerMarkdownCodeBlockProcessor("recipe-ingredients", (source, el, ctx) => {
-			ctx.addChild(new IngredientsBlock(el, source, this, ctx.sourcePath));
+			ctx.addChild(new IngredientsBlock(el, source, this, ctx));
 		});
 
 		// Interactive dashboard: category chips + search, no Dataview needed.
