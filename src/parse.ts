@@ -53,6 +53,25 @@ const UNICODE_FRACTIONS: Record<string, number> = {
 const UNICODE_CLASS = `[${Object.keys(UNICODE_FRACTIONS).join("")}]`;
 
 function readNumber(s: string): { value: number; rest: string } | null {
+	// Spelled-out mixed number: "1 and 1/2", "1 & ½"
+	const withAnd = s.match(/^(\d+)\s+(?:and|&)\s+/i);
+	if (withAnd) {
+		const tail = s.slice(withAnd[0].length);
+		let f = tail.match(/^(\d+)\s*\/\s*(\d+)/);
+		if (f) {
+			return {
+				value: Number(withAnd[1]) + Number(f[1]) / Number(f[2]),
+				rest: tail.slice(f[0].length),
+			};
+		}
+		f = tail.match(new RegExp(`^(${UNICODE_CLASS})`));
+		if (f) {
+			return {
+				value: Number(withAnd[1]) + UNICODE_FRACTIONS[f[1]],
+				rest: tail.slice(f[0].length),
+			};
+		}
+	}
 	// Mixed number: "1 1/2"
 	let m = s.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)/);
 	if (m) {

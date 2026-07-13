@@ -18,6 +18,15 @@ describe("parseLine", () => {
 		expect(ing.note).toBe("extra virgin");
 	});
 
+	it("parses spelled-out mixed numbers", () => {
+		const ing = parseLine("1 and 1/2 cups Freshly grated Parmesan")!;
+		expect(ing.amount?.low).toBeCloseTo(1.5);
+		expect(ing.unit?.id).toBe("cup");
+		expect(ing.name).toBe("Freshly grated Parmesan");
+		expect(parseLine("2 and ¾ cups sugar")!.amount?.low).toBeCloseTo(2.75);
+		expect(parseLine("1 & 1/4 tsp salt")!.amount?.low).toBeCloseTo(1.25);
+	});
+
 	it("parses unicode fractions, alone and attached", () => {
 		expect(parseLine("½ cup milk")!.amount?.low).toBeCloseTo(0.5);
 		expect(parseLine("1½ cups sugar")!.amount?.low).toBeCloseTo(1.5);

@@ -103,6 +103,11 @@ for (const spec of SPECS) {
 	BY_ID.set(spec.id, def);
 }
 
+/** Every known unit, in table order (used to build unit pickers). */
+export function allUnits(): UnitDef[] {
+	return SPECS.map(({ aliases, ...def }) => def);
+}
+
 export function unitById(id: string): UnitDef {
 	const def = BY_ID.get(id);
 	if (!def) throw new Error(`Unknown unit id: ${id}`);

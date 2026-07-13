@@ -99,6 +99,7 @@ Each line inside the ` ```recipe-ingredients ` block is:
 | --- | --- |
 | `2 cups all-purpose flour` | amount 2, unit cup, name "all-purpose flour" |
 | `1 1/2 tbsp olive oil, extra virgin` | mixed number, note "extra virgin" |
+| `1 and 1/2 cups parmesan` | spelled-out mixed numbers work too |
 | `½ cup milk` / `1½ cups sugar` | unicode fractions work |
 | `2-3 tbsp water` / `2 to 3 tbsp water` | a range; both ends scale |
 | `3 cloves garlic, minced` | count unit "clove" — scales, never converts |
@@ -128,10 +129,10 @@ Every rendered ingredients block gets a control row:
 - **as written / US / metric** cycles the displayed unit system: `2 cups`
   becomes `473 ml`, `250 g` becomes `8.8 oz`. Count units (cloves, pinches)
   are left alone, and the note is never modified.
-- **✎ (pencil)** opens the ingredient editor — a modal with one input per
-  line, add/remove buttons, and a live hint showing how each line parses
-  ("2 cups · heavy cream"), so you never have to fiddle with the raw code
-  block on a phone. Saving rewrites the block in the note.
+- **✎ (pencil)** opens the ingredient editor — a structured modal with an
+  amount field, a unit picker, and a name field per ingredient (plus
+  add/remove and section rows), so there's no free-text syntax to get wrong
+  on a phone. Saving rewrites the block in the note as clean lines.
 - The *Serves N* label updates with the multiplier (from `servings` in
   frontmatter).
 

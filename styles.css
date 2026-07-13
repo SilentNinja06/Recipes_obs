@@ -99,31 +99,49 @@ ul.rcpm-list li.rcpm-section {
 	margin-bottom: 0.6em;
 }
 
+/* Ingredient row: [amount][unit][×] with the name spanning underneath. */
 .rcpm-ing-row {
-	display: flex;
-	align-items: flex-start;
-	gap: 0.4em;
-	margin-bottom: 0.5em;
+	display: grid;
+	grid-template-columns: 5.5em minmax(0, 1fr) 44px;
+	gap: 0.35em;
+	padding-bottom: 0.6em;
+	margin-bottom: 0.6em;
+	border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.rcpm-ing-main {
-	flex: 1;
-	min-width: 0;
+.rcpm-ing-row.rcpm-ing-textrow {
+	grid-template-columns: minmax(0, 1fr) 44px;
 }
 
-.rcpm-ing-hint {
-	font-size: 0.8em;
-	color: var(--text-muted);
-	min-height: 1.2em;
-	margin-top: 0.15em;
-	padding-left: 0.2em;
+input.rcpm-ing-amount {
+	text-align: center;
+}
+
+select.rcpm-ing-unit {
+	min-height: 44px;
+	width: 100%;
+}
+
+input.rcpm-ing-name,
+input.rcpm-ing-text {
+	grid-column: 1 / -1;
+}
+
+.rcpm-ing-row.rcpm-ing-textrow input.rcpm-ing-text {
+	grid-column: 1 / 2;
+	font-weight: 600;
+}
+
+input.rcpm-invalid {
+	border-color: var(--text-error);
+	box-shadow: 0 0 0 1px var(--text-error);
 }
 
 button.rcpm-ing-remove {
-	flex-shrink: 0;
 	font-size: 1.3em;
 	line-height: 1;
 	color: var(--text-muted);
+	min-width: 44px;
 }
 
 .rcpm-ing-adders {
