@@ -6,6 +6,7 @@ import type RecipeManagerPlugin from "./main";
 function template(title: string, tag: string): string {
 	return `---
 title: ${title}
+type: entree
 servings: 4
 prepTime: 15 min
 cookTime: 30 min

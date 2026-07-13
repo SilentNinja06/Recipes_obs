@@ -12,12 +12,18 @@
  * - Volume/weight totals are re-normalized to a sensible unit (12 tsp →
  *   1/4 cup) in whichever measurement system the majority of the source
  *   entries used.
+ *
+ * The pipeline is split in two so other features can work on raw totals:
+ * `aggregateIngredients` produces base-unit accumulators (pantry subtraction
+ * and cost estimation operate on these), and `renderCombinedItem` turns one
+ * into display text.
  */
 
 import { Ingredient } from "./parse";
 import {
 	UnitDef,
 	formatQuantity,
+	formatQuantityForUnit,
 	normalizeBase,
 	unitLabel,
 } from "./units";
@@ -29,6 +35,23 @@ export interface RecipeSelection {
 	ingredients: Ingredient[];
 }
 
+export type ItemKind = "measurable" | "unit" | "plain" | "taste";
+
+export interface AggregatedItem {
+	displayName: string;
+	nameKey: string;
+	kind: ItemKind;
+	family: "volume" | "weight" | null;
+	unit: UnitDef | null;
+	/** Base units (ml/g) for measurable items; the raw count otherwise. */
+	low: number;
+	high: number;
+	hasAmount: boolean;
+	usVotes: number;
+	metricVotes: number;
+	sources: string[];
+}
+
 export interface CombinedItem {
 	name: string;
 	/** Formatted amount + unit, e.g. "2 1/4 cups"; empty when there is no amount. */
@@ -38,27 +61,28 @@ export interface CombinedItem {
 	sources: string[];
 }
 
-interface Accumulator {
-	displayName: string;
-	kind: "measurable" | "unit" | "plain" | "taste";
-	family: "volume" | "weight" | null;
-	unit: UnitDef | null;
-	low: number;
-	high: number;
-	hasAmount: boolean;
-	usVotes: number;
-	metricVotes: number;
-	sources: string[];
-	sourceSet: Set<string>;
-}
-
-function normalizeName(name: string): string {
+export function normalizeName(name: string): string {
 	let key = name.toLowerCase().replace(/\s+/g, " ").trim();
 	// Naive singularization so "onion" and "onions" merge.
 	if (key.length > 3 && key.endsWith("s") && !key.endsWith("ss")) {
 		key = key.slice(0, -1);
 	}
 	return key;
+}
+
+/**
+ * Lookup keys for an ingredient name, most specific first: the full name,
+ * then with leading words dropped so "extra virgin olive oil" can still
+ * match a data/pantry entry for "olive oil".
+ */
+export function nameKeyCandidates(name: string): string[] {
+	const words = name.toLowerCase().replace(/\s+/g, " ").trim().split(" ");
+	const keys: string[] = [];
+	for (let i = 0; i < words.length; i++) {
+		const key = normalizeName(words.slice(i).join(" "));
+		if (!keys.includes(key)) keys.push(key);
+	}
+	return keys;
 }
 
 function pluralizeName(name: string, total: number): string {
@@ -73,11 +97,9 @@ function formatMultiplier(mult: number): string {
 	return formatQuantity(mult, false);
 }
 
-export function combineIngredients(
-	selections: RecipeSelection[],
-	fractions: boolean
-): CombinedItem[] {
-	const map = new Map<string, Accumulator>();
+/** Sum selections into per-ingredient accumulators keyed by name + unit compatibility. */
+export function aggregateIngredients(selections: RecipeSelection[]): AggregatedItem[] {
+	const map = new Map<string, AggregatedItem & { sourceSet: Set<string> }>();
 
 	for (const sel of selections) {
 		const label =
@@ -93,7 +115,7 @@ export function combineIngredients(
 				(ing.unit.family === "volume" || ing.unit.family === "weight");
 
 			let key: string;
-			let kind: Accumulator["kind"];
+			let kind: ItemKind;
 			if (ing.amount == null) {
 				kind = ing.toTaste ? "taste" : "plain";
 				key = `${nameKey}|${kind}`;
@@ -112,6 +134,7 @@ export function combineIngredients(
 			if (!acc) {
 				acc = {
 					displayName: ing.name,
+					nameKey,
 					kind,
 					family: measurable ? (ing.unit!.family as "volume" | "weight") : null,
 					unit: ing.unit,
@@ -143,15 +166,11 @@ export function combineIngredients(
 		}
 	}
 
-	const items: CombinedItem[] = [];
-	for (const acc of map.values()) {
-		items.push(renderItem(acc, fractions));
-	}
-	items.sort((a, b) => a.name.localeCompare(b.name));
-	return items;
+	return [...map.values()].map(({ sourceSet, ...item }) => item);
 }
 
-function renderItem(acc: Accumulator, fractions: boolean): CombinedItem {
+/** Turn one accumulator into display text. */
+export function renderCombinedItem(acc: AggregatedItem, fractions: boolean): CombinedItem {
 	const isRange = acc.hasAmount && Math.abs(acc.high - acc.low) > 1e-9;
 
 	let amountText = "";
@@ -160,11 +179,11 @@ function renderItem(acc: Accumulator, fractions: boolean): CombinedItem {
 	if (acc.kind === "measurable" && acc.hasAmount && acc.family) {
 		const system = acc.metricVotes > acc.usVotes ? "metric" : "us";
 		const norm = normalizeBase(acc.low, acc.family, system);
-		const lowText = formatQuantity(norm.value, fractions && system === "us");
+		const lowText = formatQuantityForUnit(norm.value, norm.unit, fractions);
 		let text = lowText;
 		if (isRange) {
 			const highValue = acc.high / norm.unit.toBase;
-			text = `${lowText}–${formatQuantity(highValue, fractions && system === "us")}`;
+			text = `${lowText}–${formatQuantityForUnit(highValue, norm.unit, fractions)}`;
 		}
 		const labelValue = isRange ? acc.high / norm.unit.toBase : norm.value;
 		amountText = `${text} ${unitLabel(norm.unit, labelValue)}`;
@@ -184,6 +203,16 @@ function renderItem(acc: Accumulator, fractions: boolean): CombinedItem {
 		toTaste: acc.kind === "taste",
 		sources: acc.sources,
 	};
+}
+
+/** Aggregate + render + sort, in one call. */
+export function combineIngredients(
+	selections: RecipeSelection[],
+	fractions: boolean
+): CombinedItem[] {
+	const items = aggregateIngredients(selections).map((acc) => renderCombinedItem(acc, fractions));
+	items.sort((a, b) => a.name.localeCompare(b.name));
+	return items;
 }
 
 /** Render combined items as a markdown task list. */

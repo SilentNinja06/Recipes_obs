@@ -1,55 +1,28 @@
-import { Notice, TFile, normalizePath } from "obsidian";
-import { ensureParentFolder, getRecipeFiles, parseServings } from "./recipes";
+import { TFile, normalizePath } from "obsidian";
+import { ensureParentFolder } from "./recipes";
 import type RecipeManagerPlugin from "./main";
 
-function dataviewEnabled(plugin: RecipeManagerPlugin): boolean {
-	const plugins = (plugin.app as unknown as { plugins?: { enabledPlugins?: Set<string> } }).plugins;
-	return plugins?.enabledPlugins?.has("dataview") ?? false;
-}
+/**
+ * The index note hosts the plugin's own interactive dashboard block —
+ * category chips, search, and the recipe list — so it needs no Dataview.
+ * Users who want Dataview queries can add them alongside the block.
+ */
+const INDEX_CONTENT = `# Recipes
 
-function dataviewIndex(plugin: RecipeManagerPlugin): string {
-	const { recipesFolder, recipeTag } = plugin.settings;
-	const from: string[] = [];
-	if (recipesFolder) from.push(`"${recipesFolder}"`);
-	if (recipeTag) from.push(`#${recipeTag}`);
-	return `# Recipes
-
-\`\`\`dataview
-TABLE WITHOUT ID file.link AS Recipe, servings AS Servings, prepTime AS Prep, cookTime AS Cook, join(file.etags, " ") AS Tags
-FROM ${from.join(" OR ")}
-WHERE file.path != this.file.path
-SORT file.name ASC
+\`\`\`recipe-dashboard
 \`\`\`
 
-> [!tip]- Filter by tag
-> Add a line like \`WHERE contains(file.etags, "#dinner")\` above \`SORT\` to filter, or duplicate the query per tag.
+> [!tip]- About this dashboard
+> This note is rendered by the **Recipe Manager** plugin: tap a category chip
+> to filter by type, or search by recipe name, tag, or ingredient. Recipes
+> are grouped by the \`type\` frontmatter field (breakfast, salad, entree,
+> sauce, dessert, …) or, failing that, by their tags. Re-running the
+> *Create or update recipe index* command regenerates this note.
 `;
-}
-
-function staticIndex(plugin: RecipeManagerPlugin): string {
-	const files = getRecipeFiles(plugin.app, plugin.settings);
-	const rows = files.map((file) => {
-		const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
-		const servings = parseServings(fm?.servings);
-		const tags = Array.isArray(fm?.tags) ? fm.tags.join(", ") : fm?.tags ?? "";
-		return `| [[${file.basename}]] | ${servings ?? ""} | ${fm?.prepTime ?? ""} | ${fm?.cookTime ?? ""} | ${tags} |`;
-	});
-	return `# Recipes
-
-> [!warning] Dataview not detected
-> This is a static snapshot — re-run **Recipe Manager: Create or update recipe index** to refresh it, or install the Dataview plugin for a live-updating index.
-
-| Recipe | Servings | Prep | Cook | Tags |
-| --- | --- | --- | --- | --- |
-${rows.join("\n")}
-`;
-}
 
 /** Create or overwrite the recipe index note and open it. */
 export async function createRecipeIndex(plugin: RecipeManagerPlugin): Promise<void> {
 	const { app, settings } = plugin;
-	const hasDataview = dataviewEnabled(plugin);
-	const content = hasDataview ? dataviewIndex(plugin) : staticIndex(plugin);
 
 	let path = normalizePath(settings.indexPath || "Recipe Index.md");
 	if (!path.toLowerCase().endsWith(".md")) path += ".md";
@@ -58,13 +31,10 @@ export async function createRecipeIndex(plugin: RecipeManagerPlugin): Promise<vo
 	const existing = app.vault.getAbstractFileByPath(path);
 	let file: TFile;
 	if (existing instanceof TFile) {
-		await app.vault.modify(existing, content);
+		await app.vault.modify(existing, INDEX_CONTENT);
 		file = existing;
 	} else {
-		file = await app.vault.create(path, content);
+		file = await app.vault.create(path, INDEX_CONTENT);
 	}
 	await app.workspace.getLeaf(false).openFile(file);
-	if (!hasDataview) {
-		new Notice("Dataview is not installed — generated a static index instead.");
-	}
 }

@@ -173,6 +173,18 @@ export function formatAmount(amount: Amount, multiplier: number, fractions: bool
 	return `${low}–${formatQuantity(scaled.high, fractions)}`;
 }
 
+/**
+ * Format a quantity for a specific unit. Metric amounts round to sensible
+ * whole numbers (237 ml, not 236.59 ml); US amounts honor the fraction flag.
+ */
+export function formatQuantityForUnit(value: number, unit: UnitDef, fractions: boolean): string {
+	if (unit.system === "metric") {
+		if (value >= 10) return String(Math.round(value));
+		return String(Math.round(value * 10) / 10);
+	}
+	return formatQuantity(value, fractions);
+}
+
 /** Pick the singular or plural label for a unit given the displayed value. */
 export function unitLabel(unit: UnitDef, value: number): string {
 	return value > 1.0001 ? unit.plural : unit.singular;

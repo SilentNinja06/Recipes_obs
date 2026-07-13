@@ -1,5 +1,6 @@
 ---
 title: Blueberry Pancakes
+type: breakfast
 servings: 4
 prepTime: 10 min
 cookTime: 15 min

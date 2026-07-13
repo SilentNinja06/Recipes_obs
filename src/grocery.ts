@@ -1,7 +1,21 @@
 import { Modal, Notice, TFile, normalizePath } from "obsidian";
-import { RecipeSelection, combineIngredients, groceryListMarkdown } from "./combine";
+import {
+	AggregatedItem,
+	CombinedItem,
+	RecipeSelection,
+	aggregateIngredients,
+	renderCombinedItem,
+} from "./combine";
+import { aggregatedFactor, findIngredientData } from "./ingredient-data";
+import { applyPantry, buildPantry } from "./pantry";
 import { formatQuantity } from "./units";
-import { ensureParentFolder, getRecipeFiles, loadRecipe } from "./recipes";
+import {
+	ensureParentFolder,
+	getRecipeFiles,
+	loadIngredientDataIndex,
+	loadPantryIngredients,
+	loadRecipe,
+} from "./recipes";
 import type RecipeManagerPlugin from "./main";
 
 const MULT_STEPS = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8];
@@ -48,6 +62,21 @@ export class GroceryModal extends Modal {
 
 		this.listEl = this.contentEl.createDiv("rcpm-recipe-list");
 		this.renderList();
+
+		const pantryRow = this.contentEl.createDiv("rcpm-pantry-row");
+		const pantryToggle = pantryRow.createEl("input", {
+			type: "checkbox",
+			attr: { id: "rcpm-pantry-toggle" },
+		});
+		pantryToggle.checked = this.plugin.settings.usePantry;
+		pantryToggle.addEventListener("change", () => {
+			this.plugin.settings.usePantry = pantryToggle.checked;
+			void this.plugin.saveSettings();
+		});
+		pantryRow.createEl("label", {
+			text: `Subtract pantry stock (${this.plugin.settings.pantryPath})`,
+			attr: { for: "rcpm-pantry-toggle" },
+		});
 
 		const footer = this.contentEl.createDiv("rcpm-grocery-footer");
 		const generate = footer.createEl("button", {
@@ -131,8 +160,7 @@ export class GroceryModal extends Modal {
 		}
 		if (selections.length === 0) return;
 
-		const items = combineIngredients(selections, this.plugin.settings.groceryFractions);
-		const markdown = groceryListMarkdown(items, this.plugin.settings.groceryShowSources);
+		const markdown = await buildGroceryMarkdown(this.plugin, selections);
 		this.close();
 		await writeGroceryList(this.plugin, markdown, selections);
 	}
@@ -140,6 +168,83 @@ export class GroceryModal extends Modal {
 	onClose(): void {
 		this.contentEl.empty();
 	}
+}
+
+/** Aggregate → pantry cross-check → cost estimate → markdown checklist. */
+export async function buildGroceryMarkdown(
+	plugin: RecipeManagerPlugin,
+	selections: RecipeSelection[]
+): Promise<string> {
+	const { settings } = plugin;
+	let needed = aggregateIngredients(selections);
+	let stocked: AggregatedItem[] = [];
+
+	if (settings.usePantry) {
+		const pantryIngredients = await loadPantryIngredients(plugin.app, settings);
+		if (pantryIngredients == null) {
+			new Notice(`Pantry note "${settings.pantryPath}" not found — skipping pantry check.`);
+		} else {
+			const result = applyPantry(needed, buildPantry(pantryIngredients));
+			needed = result.needed;
+			stocked = result.stocked;
+			for (const item of result.reduced) item.sources.push("after pantry");
+		}
+	}
+
+	const dataIndex = settings.groceryShowCosts
+		? await loadIngredientDataIndex(plugin.app, settings)
+		: null;
+	const currency = settings.currency || "$";
+
+	const pairs = needed
+		.map((agg) => ({ agg, item: renderCombinedItem(agg, settings.groceryFractions) }))
+		.sort((a, b) => a.item.name.localeCompare(b.item.name));
+
+	let total = 0;
+	let pricedCount = 0;
+	const lines = pairs.map(({ agg, item }) => {
+		let line = itemLine(item, settings.groceryShowSources);
+		if (dataIndex) {
+			const data = findIngredientData(dataIndex, agg.displayName);
+			const factor = data?.cost != null ? aggregatedFactor(agg, data) : null;
+			if (data?.cost != null && factor != null) {
+				const cost = data.cost * factor;
+				total += cost;
+				pricedCount++;
+				line += ` — ~${currency}${cost.toFixed(2)}`;
+			}
+		}
+		return line;
+	});
+
+	let markdown = lines.join("\n");
+
+	if (stocked.length > 0) {
+		const stockedLines = stocked
+			.map((item) => `- [x] ${item.displayName} *(already stocked)*`)
+			.sort((a, b) => a.localeCompare(b));
+		markdown += `\n\n### Already stocked\n\n${stockedLines.join("\n")}`;
+	}
+
+	if (pricedCount > 0) {
+		markdown += `\n\n**Estimated cost: ~${currency}${total.toFixed(2)}**`;
+		if (pricedCount < pairs.length) {
+			markdown += ` *(${pricedCount} of ${pairs.length} items priced)*`;
+		}
+	}
+
+	return markdown;
+}
+
+function itemLine(item: CombinedItem, showSources: boolean): string {
+	let line = "- [ ] ";
+	if (item.amountText) line += `**${item.amountText}** `;
+	line += item.name;
+	if (item.toTaste) line += " — to taste";
+	if (showSources && item.sources.length) {
+		line += ` *(${item.sources.join("; ")})*`;
+	}
+	return line;
 }
 
 /** Write (or append) the grocery list note and open it. */

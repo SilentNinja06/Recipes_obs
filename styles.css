@@ -160,6 +160,129 @@ button.rcpm-generate {
 	font-size: 1.05em;
 }
 
+.rcpm-pantry-row {
+	display: flex;
+	align-items: center;
+	gap: 0.6em;
+	min-height: 44px;
+	margin-bottom: 0.5em;
+}
+
+.rcpm-pantry-row input[type="checkbox"] {
+	width: 22px;
+	height: 22px;
+	flex-shrink: 0;
+}
+
+.rcpm-pantry-row label {
+	cursor: pointer;
+}
+
+/* ── Dashboard ─────────────────────────────────────────────────── */
+
+.rcpm-dashboard {
+	padding: 0.25em 0;
+}
+
+.rcpm-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4em;
+	margin: 0.6em 0;
+}
+
+button.rcpm-chip {
+	min-height: 40px;
+	padding: 0 1em;
+	border-radius: 999px;
+	cursor: pointer;
+	touch-action: manipulation;
+	font-size: 0.95em;
+}
+
+button.rcpm-chip.rcpm-active {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.rcpm-dash-row {
+	padding: 0.55em 0.35em;
+	min-height: 52px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	cursor: pointer;
+	border-radius: 6px;
+}
+
+.rcpm-dash-row:hover,
+.rcpm-dash-row:active {
+	background-color: var(--background-modifier-hover);
+}
+
+.rcpm-dash-name {
+	font-weight: 600;
+}
+
+.rcpm-dash-meta {
+	color: var(--text-muted);
+	font-size: 0.85em;
+	margin-top: 0.1em;
+}
+
+.rcpm-dash-empty {
+	color: var(--text-muted);
+	padding: 1em 0.25em;
+}
+
+/* ── Nutrition modal ───────────────────────────────────────────── */
+
+table.rcpm-nutrition-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 0.8em;
+}
+
+table.rcpm-nutrition-table th,
+table.rcpm-nutrition-table td {
+	padding: 0.45em 0.6em;
+	text-align: left;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+table.rcpm-nutrition-table td:not(:first-child),
+table.rcpm-nutrition-table th:not(:first-child) {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+/* ── Day picker (meal plan) ────────────────────────────────────── */
+
+.rcpm-day-buttons {
+	display: flex;
+	flex-direction: column;
+	gap: 0.4em;
+}
+
+button.rcpm-day-btn {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
+	min-height: 48px;
+	padding: 0 0.9em;
+	border-radius: 10px;
+	cursor: pointer;
+	touch-action: manipulation;
+}
+
+.rcpm-day-label {
+	font-weight: 600;
+}
+
+.rcpm-day-date {
+	color: var(--text-muted);
+	font-size: 0.9em;
+}
+
 /* ── Share modal ───────────────────────────────────────────────── */
 
 .rcpm-share-options {

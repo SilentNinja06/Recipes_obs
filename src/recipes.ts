@@ -1,5 +1,6 @@
 import { App, TFile, TFolder, getAllTags, normalizePath } from "obsidian";
-import { Ingredient, extractIngredientBlocks, parseIngredients } from "./parse";
+import { Ingredient, extractBlocks, extractIngredientBlocks, parseIngredients, parseLine } from "./parse";
+import { IngredientData, buildDataIndex, parseIngredientData } from "./ingredient-data";
 import type { RecipeManagerSettings } from "./settings";
 
 export interface LoadedRecipe {
@@ -62,6 +63,45 @@ export function extractSection(content: string, heading: string): string | null 
 /** Strip YAML frontmatter from note content. */
 export function stripFrontmatter(content: string): string {
 	return content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
+}
+
+/**
+ * Load the pantry note's ingredient lines. Prefers `recipe-pantry` code
+ * blocks; without any, every list line in the note is treated as stock.
+ * Returns null when the note doesn't exist.
+ */
+export async function loadPantryIngredients(
+	app: App,
+	settings: RecipeManagerSettings
+): Promise<Ingredient[] | null> {
+	const file = app.vault.getAbstractFileByPath(normalizePath(settings.pantryPath));
+	if (!(file instanceof TFile)) return null;
+	const content = await app.vault.cachedRead(file);
+	const blocks = extractBlocks(content, "recipe-pantry");
+	if (blocks.length > 0) {
+		return blocks.flatMap((block) => parseIngredients(block));
+	}
+	const ingredients: Ingredient[] = [];
+	for (const line of stripFrontmatter(content).split(/\r?\n/)) {
+		const m = line.match(/^\s*[-*+]\s+(?:\[.\]\s+)?(.+)$/);
+		if (!m) continue;
+		const ing = parseLine(m[1]);
+		if (ing) ingredients.push(ing);
+	}
+	return ingredients;
+}
+
+/** Load and index the ingredient data note. Returns null when it doesn't exist. */
+export async function loadIngredientDataIndex(
+	app: App,
+	settings: RecipeManagerSettings
+): Promise<Map<string, IngredientData> | null> {
+	const file = app.vault.getAbstractFileByPath(normalizePath(settings.ingredientDataPath));
+	if (!(file instanceof TFile)) return null;
+	const content = await app.vault.cachedRead(file);
+	const blocks = extractBlocks(content, "recipe-ingredient-data");
+	if (blocks.length === 0) return null;
+	return buildDataIndex(blocks.flatMap((block) => parseIngredientData(block)));
 }
 
 /** Create intermediate folders for a note path if they don't exist. */

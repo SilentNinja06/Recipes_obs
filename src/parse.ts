@@ -175,13 +175,39 @@ export function parseIngredients(source: string): Ingredient[] {
 	return out;
 }
 
-/** Extract the bodies of all `recipe-ingredients` code blocks in a note. */
-export function extractIngredientBlocks(content: string): string[] {
+/** Parse a bare "amount + unit" phrase like "1 cup" or "100 g" (used by data notes). */
+export function parseMeasure(text: string): { amount: Amount | null; unit: UnitDef | null; rest: string } {
+	let rest = text.trim();
+	let amount: Amount | null = null;
+	let unit: UnitDef | null = null;
+	const a = readAmount(rest);
+	if (a) {
+		amount = a.amount;
+		rest = a.rest.replace(/^\s+/, "");
+	}
+	const u = readUnit(rest);
+	if (u) {
+		unit = u.unit;
+		rest = u.rest.replace(/^\s+/, "");
+	}
+	return { amount, unit, rest };
+}
+
+/** Extract the bodies of all fenced code blocks with the given language tag. */
+export function extractBlocks(content: string, lang: string): string[] {
 	const blocks: string[] = [];
-	const re = /^[ \t]*(?:```+|~~~+)[ \t]*recipe-ingredients[^\n]*\n([\s\S]*?)\n[ \t]*(?:```+|~~~+)[ \t]*$/gm;
+	const re = new RegExp(
+		`^[ \\t]*(?:\`\`\`+|~~~+)[ \\t]*${lang}[^\\n]*\\n([\\s\\S]*?)\\n[ \\t]*(?:\`\`\`+|~~~+)[ \\t]*$`,
+		"gm"
+	);
 	let m: RegExpExecArray | null;
 	while ((m = re.exec(content)) !== null) {
 		blocks.push(m[1]);
 	}
 	return blocks;
+}
+
+/** Extract the bodies of all `recipe-ingredients` code blocks in a note. */
+export function extractIngredientBlocks(content: string): string[] {
+	return extractBlocks(content, "recipe-ingredients");
 }

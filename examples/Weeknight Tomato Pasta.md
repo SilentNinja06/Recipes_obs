@@ -1,5 +1,6 @@
 ---
 title: Weeknight Tomato Pasta
+type: entree
 servings: 2
 prepTime: 5 min
 cookTime: 20 min

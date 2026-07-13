@@ -8,13 +8,22 @@ hover-dependent UI, and recipes that render with zero setup.
   ingredient; works with cups, grams, cloves, or pinches alike.
 - **Fraction toggle** — flip between `0.67` and `2/3` per view; nothing is
   written back to the file.
+- **Metric ⇄ US conversion** — a per-view toggle converts displayed units
+  (2 cups → 473 ml); the note itself never changes.
 - **Grocery lists** — pick recipes + a multiplier for each, and get one
   consolidated Markdown checklist. Matching ingredients auto-combine across
   recipes (12 tsp → 1/4 cup) when their units are compatible.
+- **Pantry cross-check** — keep a pantry note of what's on hand and the
+  grocery list subtracts it, moving covered items to "Already stocked".
+- **Nutrition & cost estimates** — a vault-native ingredient data note
+  drives per-recipe calorie/macro totals and grocery-list price estimates.
+- **Meal planning** — link a recipe under a `## Meals` heading in any of the
+  next seven daily notes, straight from a fuzzy search.
+- **Dashboard** — an interactive index note with category chips (Breakfast,
+  Entrées, Sauces, Desserts, …) and search across names, tags, and
+  ingredients. No Dataview required.
 - **Share & print** — one command: copy as Markdown, copy as plain text, or
   produce a clean print layout (ingredients + steps only).
-- **Recipe index** — generated dashboard note, Dataview-powered when
-  Dataview is installed, static table otherwise.
 
 Everything is plain Markdown — no database, fully syncable, git-friendly.
 
@@ -34,6 +43,7 @@ scaffold:
 ````markdown
 ---
 title: Blueberry Pancakes
+type: breakfast
 servings: 4
 prepTime: 10 min
 cookTime: 15 min
@@ -67,6 +77,14 @@ maple syrup, to taste
 
 A note counts as a recipe if it lives in the recipes folder **or** carries
 the recipe tag (both configurable in settings).
+
+The `type` field drives the dashboard's category chips. Known types (and
+their aliases): `breakfast` (brunch), `appetizer` (starter), `soup` (stew,
+chili), `salad`, `entree` (main, main course, dinner), `side` (side dish),
+`sauce` (condiment, dressing, marinade, dip), `bread` (baking, pastry),
+`dessert` (sweet, cake, cookie), `drink` (beverage, cocktail), `snack`.
+Anything else becomes its own custom category, tags like `#dessert` or
+`#recipe/dessert` work as a fallback, and untyped recipes land in "Other".
 
 ### Ingredient line syntax
 
@@ -106,6 +124,9 @@ Every rendered ingredients block gets a control row:
   **1×** button to type any custom value.
 - **½** toggles fraction display (`0.75` ↔ `3/4`). Per-view only; the
   default is configurable in settings.
+- **as written / US / metric** cycles the displayed unit system: `2 cups`
+  becomes `473 ml`, `250 g` becomes `8.8 oz`. Count units (cloves, pinches)
+  are left alone, and the note is never modified.
 - The *Serves N* label updates with the multiplier (from `servings` in
   frontmatter).
 
@@ -121,9 +142,62 @@ recipes, set a multiplier per recipe, generate. The plugin:
   `cloves` + `heads`), and lists incompatible pairs (like `1 cup milk` +
   `200 g milk`) separately instead of guessing;
 - merges `salt, to taste` style items into a single line;
+- optionally subtracts your pantry and prices items (see below);
 - writes a Markdown task list (checkboxes work on mobile) to the grocery
   note — by default `Grocery List.md`, replaced on each run; switch to
   append-a-dated-section mode in settings.
+
+### Pantry cross-check
+
+Keep a `Pantry.md` note (configurable) listing what you have. Use a
+` ```recipe-pantry ` code block with the same line syntax as ingredients, or
+just plain list lines:
+
+```markdown
+- 2 cups flour
+- 6 eggs
+- salt
+- olive oil
+```
+
+Tick **Subtract pantry stock** in the grocery builder: amounts you have are
+deducted (converting within unit families), partially covered items show the
+reduced amount tagged *after pantry*, fully covered items move to an
+**Already stocked** section, and bare lines like `salt` count as unlimited.
+
+### Nutrition & cost estimates
+
+Run **Open ingredient data note** once — it scaffolds a note with a
+`recipe-ingredient-data` block containing ~40 common ingredients
+(USDA-style nutrition, placeholder prices to adjust). One line per
+ingredient:
+
+```
+all-purpose flour, flour; per 1 cup; kcal 455; protein 13; carbs 95; fat 1.2; cost 0.30
+egg, eggs; per 1; kcal 72; protein 6.3; fat 4.8; carbs 0.4; cost 0.35
+chicken breast; per 100 g; kcal 165; protein 31; fat 3.6
+```
+
+Then **Show nutrition and cost for current recipe** gives total and
+per-serving calories, protein, carbs, fat, and estimated cost, with a
+"Copy as Markdown" button and an honest list of ingredients it couldn't
+match. The grocery list also prices items that have `cost` data and prints
+an estimated total. Matching converts within unit families only — data per
+100 g never guesses at a recipe's cups — and drops leading adjectives, so
+"large eggs" finds "egg".
+
+### Meal planning
+
+**Add recipe to meal plan (daily note)** — fuzzy-search a recipe (or run it
+with a recipe open), pick Today/Tomorrow/any of the next 7 days, and the
+plugin appends `- [[Recipe]]` under the `## Meals` heading of that daily
+note (created if needed, honoring your Daily Notes folder and date format).
+
+### Finding recipes
+
+- **Open recipe (search)** command (and the book ribbon icon) — fuzzy
+  search over recipe names and categories from anywhere.
+- The **dashboard** (below) searches deeper: names, tags, and ingredients.
 
 ### Share / print
 
@@ -137,12 +211,17 @@ recipes, set a multiplier per recipe, generate. The plugin:
 - **Export print-ready HTML** — saves `<recipe> (print).html` next to the
   note; on mobile, open/share it from your file manager.
 
-### Recipe index
+### Recipe dashboard
 
-**Create or update recipe index** generates a dashboard note. With Dataview
-installed you get a live table (recipe, servings, prep, cook, tags —
-filterable by editing the query); without it, a static snapshot table plus a
-warning callout.
+**Create or update recipe index** generates a note containing a
+` ```recipe-dashboard ` block that the plugin renders as an interactive
+dashboard: a search box (matching recipe names, tags, categories, and
+ingredients — type "chicken" to see everything you can cook with it),
+category chips with counts (Breakfast, Soups, Salads, Entrées, Sides,
+Sauces, Desserts, …), and a tappable list showing servings and prep/cook
+times at a glance. You can also paste that code block into any note of your
+own. No Dataview needed; Dataview users can still add their own queries
+alongside it.
 
 ## Settings
 
@@ -155,6 +234,12 @@ warning callout.
 | Existing-note behavior | Replace | Or append a dated section |
 | Show source recipes | on | Annotate items with their recipes |
 | Fractions in grocery list | on | Kitchen fractions for US units |
+| Show estimated costs | on | Price items with cost data |
+| Ingredient data note | `Recipe Ingredient Data.md` | Nutrition + price data |
+| Currency symbol | `$` | For cost estimates |
+| Pantry note | `Pantry.md` | What you have on hand |
+| Subtract pantry by default | off | Pre-checks the grocery option |
+| Daily-note heading | `Meals` | Where meal-plan links go |
 | Index note | `Recipe Index.md` | Where the dashboard goes |
 
 ## Development
@@ -191,3 +276,10 @@ The GitHub Action builds and attaches `main.js`, `manifest.json`, and
   measurement system most of the sources used.
 - **Grocery note**: persistent, re-run into (replace or append modes) rather
   than transient — so it syncs to your phone and survives restarts.
+- **Nutrition/cost data**: a plain vault note rather than a bundled
+  database or web API — editable anywhere, syncs like everything else,
+  works offline, and prices reflect *your* store. Estimates are refused
+  rather than guessed when units can't be reconciled.
+- **Dashboard**: rendered natively by the plugin instead of relying on
+  Dataview, since interactive search and category chips can't be expressed
+  in a Dataview table anyway.

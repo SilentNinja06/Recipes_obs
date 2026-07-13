@@ -1,6 +1,12 @@
 import { MarkdownRenderChild } from "obsidian";
 import { Ingredient, parseIngredients } from "./parse";
-import { formatAmount, formatQuantity, unitLabel } from "./units";
+import {
+	formatAmount,
+	formatQuantity,
+	formatQuantityForUnit,
+	normalizeBase,
+	unitLabel,
+} from "./units";
 import { parseServings } from "./recipes";
 import { PromptModal } from "./modals";
 import type RecipeManagerPlugin from "./main";
@@ -8,14 +14,24 @@ import type RecipeManagerPlugin from "./main";
 /** Multiplier presets the +/− stepper walks through. */
 const STEPS = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12];
 
+type DisplaySystem = "original" | "us" | "metric";
+
+const SYSTEM_CYCLE: DisplaySystem[] = ["original", "us", "metric"];
+const SYSTEM_LABEL: Record<DisplaySystem, string> = {
+	original: "as written",
+	us: "US",
+	metric: "metric",
+};
+
 /**
  * Renders a `recipe-ingredients` code block: scaling stepper, fraction
- * toggle, and the ingredient list itself. Multiplier and fraction state are
+ * toggle, unit-system toggle, and the ingredient list itself. All state is
  * per-view only — nothing is written back to the file.
  */
 export class IngredientsBlock extends MarkdownRenderChild {
 	private multiplier = 1;
 	private fractions: boolean;
+	private system: DisplaySystem = "original";
 	private ingredients: Ingredient[];
 
 	constructor(
@@ -52,6 +68,37 @@ export class IngredientsBlock extends MarkdownRenderChild {
 			const prev = [...STEPS].reverse().find((s) => s < this.multiplier - 1e-9);
 			if (prev != null) this.setMultiplier(prev);
 		}
+	}
+
+	/** Amount + unit text for one ingredient, honoring scale, fractions, and unit system. */
+	private amountText(ing: Ingredient): string | null {
+		if (!ing.amount) return null;
+		const mult = this.multiplier;
+		const convertible =
+			this.system !== "original" &&
+			ing.unit != null &&
+			(ing.unit.family === "volume" || ing.unit.family === "weight");
+
+		if (convertible) {
+			const family = ing.unit!.family as "volume" | "weight";
+			const system = this.system as "us" | "metric";
+			const norm = normalizeBase(ing.amount.low * mult * ing.unit!.toBase, family, system);
+			let text = formatQuantityForUnit(norm.value, norm.unit, this.fractions);
+			let labelValue = norm.value;
+			if (ing.amount.high != null) {
+				const high = (ing.amount.high * mult * ing.unit!.toBase) / norm.unit.toBase;
+				text += `–${formatQuantityForUnit(high, norm.unit, this.fractions)}`;
+				labelValue = high;
+			}
+			return `${text} ${unitLabel(norm.unit, labelValue)}`;
+		}
+
+		let text = formatAmount(ing.amount, mult, this.fractions);
+		if (ing.unit) {
+			const value = (ing.amount.high ?? ing.amount.low) * mult;
+			text += ` ${unitLabel(ing.unit, value)}`;
+		}
+		return text;
 	}
 
 	private render(): void {
@@ -110,6 +157,18 @@ export class IngredientsBlock extends MarkdownRenderChild {
 			this.render();
 		});
 
+		const system = controls.createEl("button", {
+			text: SYSTEM_LABEL[this.system],
+			cls: "rcpm-btn rcpm-system",
+			attr: { "aria-label": "Convert units (as written / US / metric)" },
+		});
+		if (this.system !== "original") system.addClass("rcpm-active");
+		system.addEventListener("click", () => {
+			const idx = SYSTEM_CYCLE.indexOf(this.system);
+			this.system = SYSTEM_CYCLE[(idx + 1) % SYSTEM_CYCLE.length];
+			this.render();
+		});
+
 		const servings = this.servings;
 		if (servings != null) {
 			controls.createSpan({
@@ -129,11 +188,9 @@ export class IngredientsBlock extends MarkdownRenderChild {
 				}
 			}
 			const li = list.createEl("li", { cls: "rcpm-item" });
-			if (ing.amount) {
-				const value = (ing.amount.high ?? ing.amount.low) * this.multiplier;
-				let text = formatAmount(ing.amount, this.multiplier, this.fractions);
-				if (ing.unit) text += ` ${unitLabel(ing.unit, value)}`;
-				li.createSpan({ text, cls: "rcpm-amount" });
+			const amount = this.amountText(ing);
+			if (amount) {
+				li.createSpan({ text: amount, cls: "rcpm-amount" });
 				li.appendText(" ");
 			}
 			li.appendText(ing.name);

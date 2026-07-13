@@ -8,8 +8,14 @@ export interface RecipeManagerSettings {
 	groceryMode: "replace" | "append";
 	groceryShowSources: boolean;
 	groceryFractions: boolean;
+	groceryShowCosts: boolean;
 	indexPath: string;
 	defaultFractions: boolean;
+	ingredientDataPath: string;
+	currency: string;
+	pantryPath: string;
+	usePantry: boolean;
+	mealHeading: string;
 }
 
 export const DEFAULT_SETTINGS: RecipeManagerSettings = {
@@ -19,8 +25,14 @@ export const DEFAULT_SETTINGS: RecipeManagerSettings = {
 	groceryMode: "replace",
 	groceryShowSources: true,
 	groceryFractions: true,
+	groceryShowCosts: true,
 	indexPath: "Recipe Index.md",
 	defaultFractions: false,
+	ingredientDataPath: "Recipe Ingredient Data.md",
+	currency: "$",
+	pantryPath: "Pantry.md",
+	usePantry: false,
+	mealHeading: "Meals",
 };
 
 export class RecipeManagerSettingTab extends PluginSettingTab {
@@ -118,6 +130,84 @@ export class RecipeManagerSettingTab extends PluginSettingTab {
 					this.plugin.settings.groceryFractions = value;
 					await this.plugin.saveSettings();
 				})
+			);
+
+		new Setting(containerEl)
+			.setName("Show estimated costs")
+			.setDesc("Price grocery items using the ingredient data note, when cost data exists.")
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.groceryShowCosts).onChange(async (value) => {
+					this.plugin.settings.groceryShowCosts = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl).setName("Nutrition & cost data").setHeading();
+
+		new Setting(containerEl)
+			.setName("Ingredient data note")
+			.setDesc("Note holding the recipe-ingredient-data block (nutrition facts and prices). Run 'Open ingredient data note' to scaffold it.")
+			.addText((text) =>
+				text
+					.setPlaceholder("Recipe Ingredient Data.md")
+					.setValue(this.plugin.settings.ingredientDataPath)
+					.onChange(async (value) => {
+						this.plugin.settings.ingredientDataPath = value.trim();
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Currency symbol")
+			.setDesc("Used for cost estimates.")
+			.addText((text) =>
+				text
+					.setPlaceholder("$")
+					.setValue(this.plugin.settings.currency)
+					.onChange(async (value) => {
+						this.plugin.settings.currency = value.trim() || "$";
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl).setName("Pantry").setHeading();
+
+		new Setting(containerEl)
+			.setName("Pantry note")
+			.setDesc("Note listing what you have on hand. Lines with amounts cover that much; bare lines (like 'salt') always cover.")
+			.addText((text) =>
+				text
+					.setPlaceholder("Pantry.md")
+					.setValue(this.plugin.settings.pantryPath)
+					.onChange(async (value) => {
+						this.plugin.settings.pantryPath = value.trim();
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Subtract pantry by default")
+			.setDesc("Pre-check the pantry option in the grocery list builder.")
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.usePantry).onChange(async (value) => {
+					this.plugin.settings.usePantry = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl).setName("Meal plan").setHeading();
+
+		new Setting(containerEl)
+			.setName("Daily-note heading")
+			.setDesc("Recipes are linked under this heading in your daily note.")
+			.addText((text) =>
+				text
+					.setPlaceholder("Meals")
+					.setValue(this.plugin.settings.mealHeading)
+					.onChange(async (value) => {
+						this.plugin.settings.mealHeading = value.trim() || "Meals";
+						await this.plugin.saveSettings();
+					})
 			);
 
 		new Setting(containerEl).setName("Recipe index").setHeading();
