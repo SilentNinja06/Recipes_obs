@@ -37,8 +37,9 @@ Works on desktop and mobile (`isDesktopOnly: false`).
 
 ## Writing a recipe
 
-One recipe = one note. Run **Recipe Manager: Create new recipe** to get this
-scaffold:
+One recipe = one note. Run **Recipe Manager: Create new recipe** — it asks
+for the name, type (tap a category chip or type your own), servings, and
+prep/cook times, then scaffolds a note like this:
 
 ````markdown
 ---

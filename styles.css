@@ -91,6 +91,38 @@ ul.rcpm-list li.rcpm-section {
 	min-width: 88px;
 }
 
+/* ── New recipe modal ──────────────────────────────────────────── */
+
+.rcpm-field {
+	margin-bottom: 0.9em;
+	flex: 1;
+	min-width: 0;
+}
+
+.rcpm-field-label {
+	display: block;
+	font-size: 0.85em;
+	color: var(--text-muted);
+	margin-bottom: 0.3em;
+}
+
+input.rcpm-field-input {
+	width: 100%;
+	min-height: 44px;
+	padding: 0 0.6em;
+	font-size: 1em;
+}
+
+.rcpm-new-modal .rcpm-chips {
+	margin: 0 0 0.5em;
+}
+
+.rcpm-inline-fields {
+	display: flex;
+	gap: 0.6em;
+	flex-wrap: wrap;
+}
+
 /* ── Grocery modal ─────────────────────────────────────────────── */
 
 .rcpm-search {

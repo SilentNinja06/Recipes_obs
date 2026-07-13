@@ -1,7 +1,7 @@
 {
 	"id": "recipe-manager",
 	"name": "Recipe Manager",
-	"version": "1.1.1",
+	"version": "1.1.2",
 	"minAppVersion": "0.15.0",
 	"description": "Store, scale, and shop from recipes kept as plain notes. Ingredient scaling with fraction display, consolidated grocery lists, and print/share export — built for one-handed kitchen use on mobile.",
 	"author": "SilentNinja06",
