@@ -1,0 +1,189 @@
+/* ── Ingredients block ─────────────────────────────────────────── */
+
+.rcpm-block {
+	padding: 0.25em 0;
+}
+
+.rcpm-controls {
+	display: flex;
+	align-items: center;
+	gap: 0.6em;
+	flex-wrap: wrap;
+	margin-bottom: 0.6em;
+}
+
+.rcpm-scale {
+	display: flex;
+	align-items: center;
+	gap: 0.25em;
+}
+
+/* Kitchen-sized touch targets: nothing interactive under 44px. */
+button.rcpm-btn {
+	min-width: 44px;
+	min-height: 44px;
+	padding: 0 0.6em;
+	font-size: 1.15em;
+	border-radius: 10px;
+	cursor: pointer;
+	touch-action: manipulation;
+}
+
+button.rcpm-mult {
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+	min-width: 60px;
+}
+
+button.rcpm-frac.rcpm-active {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.rcpm-servings {
+	color: var(--text-muted);
+	font-size: 0.95em;
+	margin-left: auto;
+}
+
+ul.rcpm-list {
+	margin: 0;
+	padding-left: 1.4em;
+}
+
+ul.rcpm-list li.rcpm-item {
+	margin: 0.3em 0;
+	line-height: 1.5;
+}
+
+ul.rcpm-list li.rcpm-section {
+	list-style: none;
+	margin: 0.7em 0 0.2em -1.4em;
+	font-weight: 700;
+	color: var(--text-normal);
+}
+
+.rcpm-amount {
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+.rcpm-note {
+	color: var(--text-muted);
+}
+
+/* ── Prompt modal ──────────────────────────────────────────────── */
+
+.rcpm-prompt-input {
+	width: 100%;
+	font-size: 1.1em;
+	padding: 0.5em 0.6em;
+	margin-bottom: 0.8em;
+}
+
+.rcpm-prompt-buttons {
+	display: flex;
+	justify-content: flex-end;
+}
+
+.rcpm-prompt-buttons button {
+	min-height: 44px;
+	min-width: 88px;
+}
+
+/* ── Grocery modal ─────────────────────────────────────────────── */
+
+.rcpm-search {
+	width: 100%;
+	min-height: 44px;
+	margin-bottom: 0.6em;
+	padding: 0 0.6em;
+}
+
+.rcpm-recipe-list {
+	max-height: 50vh;
+	overflow-y: auto;
+	margin-bottom: 0.75em;
+}
+
+.rcpm-recipe-row {
+	display: flex;
+	align-items: center;
+	gap: 0.6em;
+	min-height: 52px;
+	padding: 0.15em 0.25em;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.rcpm-recipe-row input[type="checkbox"] {
+	width: 22px;
+	height: 22px;
+	flex-shrink: 0;
+}
+
+.rcpm-recipe-name {
+	flex: 1;
+	cursor: pointer;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	padding: 0.6em 0;
+}
+
+.rcpm-row-stepper {
+	display: flex;
+	align-items: center;
+	gap: 0.2em;
+	flex-shrink: 0;
+}
+
+button.rcpm-btn-sm {
+	min-width: 44px;
+	min-height: 40px;
+}
+
+.rcpm-row-mult {
+	min-width: 44px;
+	text-align: center;
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+}
+
+.rcpm-grocery-footer {
+	display: flex;
+	justify-content: flex-end;
+}
+
+button.rcpm-generate {
+	min-height: 48px;
+	width: 100%;
+	font-size: 1.05em;
+}
+
+/* ── Share modal ───────────────────────────────────────────────── */
+
+.rcpm-share-options {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5em;
+}
+
+button.rcpm-share-option {
+	display: block;
+	width: 100%;
+	text-align: left;
+	min-height: 56px;
+	padding: 0.6em 0.9em;
+	border-radius: 10px;
+	cursor: pointer;
+	touch-action: manipulation;
+}
+
+.rcpm-share-title {
+	font-weight: 600;
+}
+
+.rcpm-share-desc {
+	font-size: 0.85em;
+	color: var(--text-muted);
+}
