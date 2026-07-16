@@ -1,4 +1,4 @@
-import { Plugin, TFile } from "obsidian";
+import { Plugin, TFile, moment, normalizePath } from "obsidian";
 import { DEFAULT_SETTINGS, RecipeManagerSettingTab, RecipeManagerSettings } from "./settings";
 import { IngredientsBlock } from "./render";
 import { DashboardBlock } from "./dashboard";
@@ -11,6 +11,55 @@ import { addToMealPlanCommand, openRecipeCommand } from "./meal-plan";
 
 export default class RecipeManagerPlugin extends Plugin {
 	settings: RecipeManagerSettings = DEFAULT_SETTINGS;
+
+	/**
+	 * Read-only API for companion plugins (e.g. the MERIDIAN dashboard).
+	 * Consumers check `version` and fall back to reading the vault directly if it
+	 * is absent. The grocery/pantry logic itself is untouched.
+	 */
+	public api = {
+		version: 1,
+		/** Recipes planned under the meal heading of `date`'s daily note. */
+		getPlannedMeals: async (date: string) => {
+			const path = this.dailyNotePathFor(date);
+			const file = this.app.vault.getAbstractFileByPath(path);
+			if (!(file instanceof TFile)) return [];
+			const content = await this.app.vault.cachedRead(file);
+			return extractMealLinks(content, this.settings.mealHeading || "Meals");
+		},
+		/** The current grocery list: checkbox items with their line indices. */
+		getGroceryList: async () => {
+			let path = normalizePath(this.settings.groceryListPath || "Grocery List.md");
+			if (!path.toLowerCase().endsWith(".md")) path += ".md";
+			const file = this.app.vault.getAbstractFileByPath(path);
+			if (!(file instanceof TFile)) return { path, exists: false, items: [] };
+			const content = await this.app.vault.cachedRead(file);
+			const items: Array<{ name: string; checked: boolean; line: number }> = [];
+			content.split("\n").forEach((raw, line) => {
+				const m = raw.match(/^\s*[-*]\s+\[([ xX])\]\s+(.*)$/);
+				if (m) items.push({ name: m[2].trim(), checked: m[1].toLowerCase() === "x", line });
+			});
+			return { path, exists: true, items };
+		},
+		getGroceryListPath: () => this.settings.groceryListPath,
+		getMealHeading: () => this.settings.mealHeading || "Meals",
+	};
+
+	/** Today's (or `date`'s) daily-note path from the core Daily Notes options. */
+	private dailyNotePathFor(date: string): string {
+		const options =
+			(
+				this.app as unknown as {
+					internalPlugins?: {
+						getPluginById?: (id: string) => { instance?: { options?: { folder?: string; format?: string } } };
+					};
+				}
+			).internalPlugins?.getPluginById?.("daily-notes")?.instance?.options ?? {};
+		const folder = (options.folder ?? "").trim().replace(/\/+$/, "");
+		const format = (options.format ?? "").trim() || "YYYY-MM-DD";
+		const name = moment(date, "YYYY-MM-DD").format(format);
+		return normalizePath((folder ? folder + "/" : "") + name + ".md");
+	}
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
@@ -108,4 +157,19 @@ export default class RecipeManagerPlugin extends Plugin {
 	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
 	}
+}
+
+/** Wikilinked recipes under the (colon-tolerant) meal heading of a note. */
+function extractMealLinks(content: string, heading: string): Array<{ name: string; link: string }> {
+	const esc = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	const lines = content.split("\n");
+	const start = lines.findIndex((l) => new RegExp(`^#{1,6}\\s+${esc}:?\\s*$`, "i").test(l));
+	if (start === -1) return [];
+	const out: Array<{ name: string; link: string }> = [];
+	for (let i = start + 1; i < lines.length; i++) {
+		if (/^#{1,6}\s/.test(lines[i])) break;
+		const m = lines[i].match(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/);
+		if (m) out.push({ name: (m[2] ?? m[1]).trim(), link: m[1].trim() });
+	}
+	return out;
 }
