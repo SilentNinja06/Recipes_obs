@@ -89,7 +89,10 @@ function dailyNoteSettings(plugin: RecipeManagerPlugin): { folder: string; forma
 
 /** Append `line` at the end of the `heading` section, creating the section if needed. */
 export function insertUnderHeading(content: string, heading: string, line: string): string {
-	const headingRe = new RegExp(`^(#{1,6})\\s+${heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*$`, "im");
+	// Colon-tolerant (`# Meals` or `# Meals:`) as defense in depth — a stray
+	// colon in the daily-note heading must still match instead of appending a
+	// duplicate section.
+	const headingRe = new RegExp(`^(#{1,6})\\s+${heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}:?\\s*$`, "im");
 	const m = headingRe.exec(content);
 	if (!m) {
 		const base = content.replace(/\s+$/, "");
