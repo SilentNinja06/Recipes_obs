@@ -212,16 +212,16 @@ export function parseMeasure(text: string): { amount: Amount | null; unit: UnitD
 	return { amount, unit, rest };
 }
 
-/** Extract the bodies of all fenced code blocks with the given language tag. */
+/** Extract the bodies of all fenced code blocks with the given language tag (empty blocks included). */
 export function extractBlocks(content: string, lang: string): string[] {
 	const blocks: string[] = [];
 	const re = new RegExp(
-		`^[ \\t]*(?:\`\`\`+|~~~+)[ \\t]*${lang}[^\\n]*\\n([\\s\\S]*?)\\n[ \\t]*(?:\`\`\`+|~~~+)[ \\t]*$`,
+		`^[ \\t]*(?:\`\`\`+|~~~+)[ \\t]*${lang}[^\\n]*\\n([\\s\\S]*?)^[ \\t]*(?:\`\`\`+|~~~+)[ \\t]*$`,
 		"gm"
 	);
 	let m: RegExpExecArray | null;
 	while ((m = re.exec(content)) !== null) {
-		blocks.push(m[1]);
+		blocks.push(m[1].replace(/\r?\n$/, ""));
 	}
 	return blocks;
 }

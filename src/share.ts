@@ -67,7 +67,7 @@ export async function toShareMarkdown(plugin: RecipeManagerPlugin, file: TFile):
 	const content = await plugin.app.vault.cachedRead(file);
 	let md = stripFrontmatter(content);
 	md = md.replace(
-		/^[ \t]*(?:```+|~~~+)[ \t]*recipe-ingredients[^\n]*\n([\s\S]*?)\n[ \t]*(?:```+|~~~+)[ \t]*$/gm,
+		/^[ \t]*(?:```+|~~~+)[ \t]*recipe-ingredients[^\n]*\n([\s\S]*?)^[ \t]*(?:```+|~~~+)[ \t]*$/gm,
 		(_match, body: string) => flattenIngredients(body)
 	);
 	return md.trim() + "\n";

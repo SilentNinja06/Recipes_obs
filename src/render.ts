@@ -18,7 +18,6 @@ const STEPS = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12];
 
 type DisplaySystem = "original" | "us" | "metric";
 
-const SYSTEM_CYCLE: DisplaySystem[] = ["original", "us", "metric"];
 const SYSTEM_LABEL: Record<DisplaySystem, string> = {
 	original: "as written",
 	us: "US",
@@ -35,6 +34,13 @@ export class IngredientsBlock extends MarkdownRenderChild {
 	private fractions: boolean;
 	private system: DisplaySystem = "original";
 	private ingredients: Ingredient[];
+	/**
+	 * Only modes that visibly change this recipe are offered — a recipe with
+	 * no metric units cycles "as written" ⇄ "metric" (a "US" mode would be a
+	 * no-op that makes the label look wrong). The button always shows the
+	 * mode currently displayed.
+	 */
+	private systemCycle: DisplaySystem[];
 
 	constructor(
 		containerEl: HTMLElement,
@@ -45,6 +51,15 @@ export class IngredientsBlock extends MarkdownRenderChild {
 		super(containerEl);
 		this.ingredients = parseIngredients(source);
 		this.fractions = plugin.settings.defaultFractions;
+
+		const measurable = this.ingredients.filter(
+			(i) => i.unit && (i.unit.family === "volume" || i.unit.family === "weight")
+		);
+		const hasUs = measurable.some((i) => i.unit!.system === "us");
+		const hasMetric = measurable.some((i) => i.unit!.system === "metric");
+		this.systemCycle = ["original"];
+		if (hasMetric) this.systemCycle.push("us");
+		if (hasUs) this.systemCycle.push("metric");
 	}
 
 	private get sourcePath(): string {
@@ -173,17 +188,19 @@ export class IngredientsBlock extends MarkdownRenderChild {
 			this.render();
 		});
 
-		const system = controls.createEl("button", {
-			text: SYSTEM_LABEL[this.system],
-			cls: "rcpm-btn rcpm-system",
-			attr: { "aria-label": "Convert units (as written / US / metric)" },
-		});
-		if (this.system !== "original") system.addClass("rcpm-active");
-		system.addEventListener("click", () => {
-			const idx = SYSTEM_CYCLE.indexOf(this.system);
-			this.system = SYSTEM_CYCLE[(idx + 1) % SYSTEM_CYCLE.length];
-			this.render();
-		});
+		if (this.systemCycle.length > 1) {
+			const system = controls.createEl("button", {
+				text: SYSTEM_LABEL[this.system],
+				cls: "rcpm-btn rcpm-system",
+				attr: { "aria-label": "Currently displayed unit system — tap to convert" },
+			});
+			if (this.system !== "original") system.addClass("rcpm-active");
+			system.addEventListener("click", () => {
+				const idx = this.systemCycle.indexOf(this.system);
+				this.system = this.systemCycle[(idx + 1) % this.systemCycle.length];
+				this.render();
+			});
+		}
 
 		if (this.sourcePath) {
 			const edit = controls.createEl("button", {

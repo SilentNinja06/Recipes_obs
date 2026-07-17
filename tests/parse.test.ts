@@ -130,4 +130,9 @@ describe("extractIngredientBlocks", () => {
 		const blocks = extractIngredientBlocks(note);
 		expect(blocks).toEqual(["2 cups flour", "1 tsp salt"]);
 	});
+
+	it("finds empty blocks (fresh recipe scaffolds)", () => {
+		const note = ["# New Recipe", "", "```recipe-ingredients", "```", ""].join("\n");
+		expect(extractIngredientBlocks(note)).toEqual([""]);
+	});
 });

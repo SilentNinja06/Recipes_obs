@@ -39,7 +39,9 @@ Works on desktop and mobile (`isDesktopOnly: false`).
 
 One recipe = one note. Run **Recipe Manager: Create new recipe** — it asks
 for the name, type (tap a category chip or type your own), servings, and
-prep/cook times, then scaffolds a note like this:
+prep/cook times, then scaffolds the note with an empty ingredients block
+(tap the ✎ pencil to fill it in — no sample text to delete). A filled-in
+recipe looks like this:
 
 ````markdown
 ---
@@ -126,9 +128,12 @@ Every rendered ingredients block gets a control row:
   **1×** button to type any custom value.
 - **½** toggles fraction display (`0.75` ↔ `3/4`). Per-view only; the
   default is configurable in settings.
-- **as written / US / metric** cycles the displayed unit system: `2 cups`
-  becomes `473 ml`, `250 g` becomes `8.8 oz`. Count units (cloves, pinches)
-  are left alone, and the note is never modified.
+- **as written / US / metric** shows the unit system currently displayed;
+  tapping converts to the next one (`2 cups` → `473 ml`, `250 g` →
+  `8.8 oz`). Only conversions that actually change the recipe are offered —
+  an all-US recipe cycles *as written ⇄ metric* — so the label always
+  matches what's on screen. Count units (cloves, pinches) are left alone,
+  and the note is never modified.
 - **✎ (pencil)** opens the ingredient editor — a structured modal with an
   amount field, a unit picker, and a name field per ingredient (plus
   add/remove and section rows), so there's no free-text syntax to get wrong

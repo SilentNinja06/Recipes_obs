@@ -14,7 +14,7 @@ export interface BlockLocation {
 }
 
 const BLOCK_RE =
-	/^([ \t]*(?:```+|~~~+)[ \t]*recipe-ingredients[^\n]*)\n([\s\S]*?)\n([ \t]*(?:```+|~~~+)[ \t]*)$/gm;
+	/^([ \t]*(?:```+|~~~+)[ \t]*recipe-ingredients[^\n]*)\n([\s\S]*?)^([ \t]*(?:```+|~~~+)[ \t]*)$/gm;
 
 interface IngredientRowInit {
 	amount: string;
@@ -264,13 +264,13 @@ export class IngredientEditorModal extends Modal {
 		}
 
 		// Fallback: find the block whose body still matches what we opened with.
-		const normalize = (s: string) => s.replace(/\r\n/g, "\n");
+		const normalize = (s: string) => s.replace(/\r\n/g, "\n").replace(/\n$/, "");
 		const target = normalize(this.location.originalBody);
 		let replaced = false;
 		const updated = content.replace(BLOCK_RE, (match, open: string, body: string, close: string) => {
 			if (!replaced && normalize(body) === target) {
 				replaced = true;
-				return `${open}\n${newBody}\n${close}`;
+				return `${open}\n${newBody ? newBody + "\n" : ""}${close}`;
 			}
 			return match;
 		});

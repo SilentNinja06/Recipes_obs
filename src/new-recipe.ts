@@ -27,9 +27,6 @@ image:
 # ${info.title}
 
 \`\`\`recipe-ingredients
-2 cups example ingredient
-1 tbsp another ingredient
-salt, to taste
 \`\`\`
 
 ## Steps
