@@ -1,58 +1,28 @@
 name: Release plugin
-
 on:
   push:
-    tags:
-      - "*"
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "Release tag (e.g. 1.1.1). Created if it doesn't exist."
-        required: true
-        type: string
-
+    paths:
+      - manifest.json
+      - main.js
+  workflow_dispatch: {}
 permissions:
   contents: write
-
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm test
-
-      - name: Build
-        run: npm run build
-
-      - name: Create release
+      - name: Publish release from manifest version
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # If the release already exists (e.g. created via the GitHub UI when
-        # tagging), attach the plugin files to it instead of failing. On
-        # manual dispatch, the tag comes from the input and is created by
-        # `gh release create` pointing at the built commit.
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            tag="${{ inputs.tag }}"
+          VERSION="$(jq -r .version manifest.json)"
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then echo "no version in manifest"; exit 1; fi
+          ASSETS="main.js manifest.json"
+          [ -f styles.css ] && ASSETS="$ASSETS styles.css"
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release upload "$VERSION" $ASSETS --clobber
           else
-            tag="${GITHUB_REF#refs/tags/}"
-          fi
-          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            gh release upload "$tag" --repo "$GITHUB_REPOSITORY" --clobber \
-              main.js manifest.json styles.css
-          else
-            gh release create "$tag" --repo "$GITHUB_REPOSITORY" \
-              --title "$tag" \
-              --target "$GITHUB_SHA" \
-              --generate-notes \
-              main.js manifest.json styles.css
+            gh release create "$VERSION" $ASSETS --title "$VERSION" \
+              --notes "BRAT distribution release $VERSION. Built from the obsidian_workspace.obs monorepo."
           fi
