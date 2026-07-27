@@ -44,18 +44,23 @@ export class DashboardBlock extends MarkdownRenderChild {
 		this.entries = getRecipeFiles(app, settings).map((file) => {
 			const cache = app.metadataCache.getFileCache(file);
 			const fm = cache?.frontmatter;
+			// Unified schema: recipe fields nested under `recipe:`; fall back to
+			// legacy flat keys (and legacy `type`-as-category) for un-migrated notes.
+			const r = fm?.recipe ?? {};
 			const tags = cache ? getAllTags(cache) ?? [] : [];
-			const category = categorize(fm?.type, tags);
+			const category = categorize(r.category ?? fm?.type, tags);
 			const name =
 				typeof fm?.title === "string" && fm.title.trim() ? fm.title.trim() : file.basename;
+			const prep = r.prep_time ?? fm?.prepTime;
+			const cook = r.cook_time ?? fm?.cookTime;
 			return {
 				file,
 				name,
 				categoryId: category.id,
 				categoryLabel: category.label,
-				servings: parseServings(fm?.servings),
-				prep: fm?.prepTime != null ? String(fm.prepTime) : null,
-				cook: fm?.cookTime != null ? String(fm.cookTime) : null,
+				servings: parseServings(r.servings ?? fm?.servings),
+				prep: prep != null ? String(prep) : null,
+				cook: cook != null ? String(cook) : null,
 				search: `${name} ${tags.join(" ")} ${category.label}`.toLowerCase(),
 			};
 		});

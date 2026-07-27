@@ -44,7 +44,8 @@ export async function loadRecipe(app: App, file: TFile): Promise<LoadedRecipe | 
 	const ingredients = blocks.flatMap((block) => parseIngredients(block));
 	const fm = app.metadataCache.getFileCache(file)?.frontmatter;
 	const name = typeof fm?.title === "string" && fm.title.trim() ? fm.title.trim() : file.basename;
-	return { file, name, servings: parseServings(fm?.servings), ingredients };
+	// Unified schema: recipe.servings nested, fall back to legacy flat `servings`.
+	return { file, name, servings: parseServings(fm?.recipe?.servings ?? fm?.servings), ingredients };
 }
 
 /** Extract the markdown body of a `## Heading` section (until the next same-or-higher heading). */
