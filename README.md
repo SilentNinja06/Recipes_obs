@@ -1,3 +1,8 @@
+> [!note] Archived mirror — development moved to the monorepo
+> **recipe-manager** now lives in the [obsidian-workspace monorepo](https://github.com/SilentNinja06/obsidian_workspace.obs) at `plugins/recipes`, alongside the other plugins and the shared `@obsidian-workspace/*` packages. Please open issues and PRs there.
+>
+> This repository is kept as an **archived mirror** so existing BRAT installs keep resolving from its releases. New releases are cut from the monorepo.
+
 # Recipe Manager for Obsidian
 
 Store, scale, and shop from recipes kept as plain Markdown notes in your
