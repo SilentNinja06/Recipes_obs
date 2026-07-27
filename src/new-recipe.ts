@@ -13,15 +13,24 @@ interface NewRecipeInfo {
 }
 
 function template(info: NewRecipeInfo, tag: string): string {
+	// Unified schema (docs/frontmatter-schema.md): core keys flat, recipe-specific
+	// fields nested under `recipe:`. `type` is the note kind (recipe); the old
+	// category value moves to recipe.category.
+	const today = new Date().toISOString().slice(0, 10);
 	return `---
 title: ${info.title}
-type: ${info.type}
-servings: ${info.servings}
-prepTime: ${info.prepTime}
-cookTime: ${info.cookTime}
+type: recipe
+status: active
+created: ${today}
+updated: ${today}
 tags: [${tag}]
 source:
 image:
+recipe:
+  category: ${info.type}
+  servings: ${info.servings}
+  prep_time: ${info.prepTime}
+  cook_time: ${info.cookTime}
 ---
 
 # ${info.title}

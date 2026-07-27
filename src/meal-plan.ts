@@ -18,7 +18,8 @@ export class RecipeSuggestModal extends FuzzySuggestModal<TFile> {
 	getItemText(item: TFile): string {
 		const cache = this.plugin.app.metadataCache.getFileCache(item);
 		const tags = cache ? getAllTags(cache) ?? [] : [];
-		const category = categorize(cache?.frontmatter?.type, tags);
+		const fm = cache?.frontmatter;
+		const category = categorize(fm?.recipe?.category ?? fm?.type, tags);
 		return `${item.basename} — ${category.label}`;
 	}
 

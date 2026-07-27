@@ -180,10 +180,14 @@ export async function buildPrintHtml(plugin: RecipeManagerPlugin, file: TFile): 
 	const title = typeof fm?.title === "string" && fm.title.trim() ? fm.title.trim() : file.basename;
 
 	const metaBits: string[] = [];
-	const servings = parseServings(fm?.servings);
+	// Unified schema: recipe fields nested; fall back to legacy flat keys.
+	const r = fm?.recipe ?? {};
+	const servings = parseServings(r.servings ?? fm?.servings);
+	const prep = r.prep_time ?? fm?.prepTime;
+	const cook = r.cook_time ?? fm?.cookTime;
 	if (servings != null) metaBits.push(`Serves ${servings}`);
-	if (fm?.prepTime) metaBits.push(`Prep ${escapeHtml(String(fm.prepTime))}`);
-	if (fm?.cookTime) metaBits.push(`Cook ${escapeHtml(String(fm.cookTime))}`);
+	if (prep) metaBits.push(`Prep ${escapeHtml(String(prep))}`);
+	if (cook) metaBits.push(`Cook ${escapeHtml(String(cook))}`);
 	if (typeof fm?.source === "string" && fm.source.trim()) {
 		metaBits.push(escapeHtml(fm.source.trim()));
 	}

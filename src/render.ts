@@ -82,7 +82,8 @@ export class IngredientsBlock extends MarkdownRenderChild {
 
 	private get servings(): number | null {
 		const fm = this.plugin.app.metadataCache.getCache(this.sourcePath)?.frontmatter;
-		return parseServings(fm?.servings);
+		// Unified schema: recipe.servings nested, fall back to legacy flat `servings`.
+		return parseServings(fm?.recipe?.servings ?? fm?.servings);
 	}
 
 	private setMultiplier(value: number): void {

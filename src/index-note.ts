@@ -15,8 +15,8 @@ const INDEX_CONTENT = `# Recipes
 > [!tip]- About this dashboard
 > This note is rendered by the **Recipe Manager** plugin: tap a category chip
 > to filter by type, or search by recipe name, tag, or ingredient. Recipes
-> are grouped by the \`type\` frontmatter field (breakfast, salad, entree,
-> sauce, dessert, …) or, failing that, by their tags. Re-running the
+> are grouped by the \`recipe.category\` frontmatter field (breakfast, salad,
+> entree, sauce, dessert, …) or, failing that, by their tags. Re-running the
 > *Create or update recipe index* command regenerates this note.
 `;
 
